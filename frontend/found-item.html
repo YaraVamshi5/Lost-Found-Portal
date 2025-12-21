@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Found Item</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+
+    body {
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    label {
+      margin-top: 10px;
+      display: block;
+      font-size: 14px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    textarea {
+      height: 80px;
+      resize: none;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .toast {
+      position: fixed;
+      top: 70px;
+      right: 30px;
+      min-width: 250px;
+      padding: 12px 18px;
+      border-radius: 6px;
+      color: #fff;
+      display: none;
+      z-index: 9999;
+    }
+
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    .found-item-text{
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2 class="found-item-text">Found Item</h2>
+
+  <label>Image</label>
+  <input type="file" id="image" accept="image/*"/>
+
+  <label>Product Name</label>
+  <input type="text" placeholder="Enter Product Name" id="productName"/>
+
+  <label>Description</label>
+  <textarea id="description" placeholder="About Product"></textarea>
+
+  <label>Founded Date</label>
+  <input type="date" id="date"/>
+
+  <label>Founded Location</label>
+  <input type="text" placeholder="Enter Founded location" id="location"/>
+
+  <label>Mobile Number</label>
+  <input type="text" placeholder="Enter mobile number" id="mobile"/>
+
+  <button type="button" id="submitBtn">Confirm</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let toastTimer;
+
+function showToast(msg, type = "success", duration = 4000) {
+  const toast = document.getElementById("toast");
+  clearTimeout(toastTimer);
+  toast.textContent = msg;
+  toast.className = `toast ${type}`;
+  toast.style.display = "block";
+  toastTimer = setTimeout(() => toast.style.display = "none", duration);
+}
+
+/* ---------- login Check ---------- */
+const userId = localStorage.getItem("userId");
+const submitBtn = document.getElementById("submitBtn");
+
+if (!userId) {
+  showToast("Please login first", "error");
+  submitBtn.disabled = true;
+  setTimeout(() => location.href = "index.html", 4000);
+}
+
+/* ---------- Submit ---------- */
+submitBtn.addEventListener("click", submitItem);
+
+async function submitItem() {
+  if (!userId) return;
+
+  const image = document.getElementById("image").files[0];
+  const productName = document.getElementById("productName").value.trim();
+  const description = document.getElementById("description").value.trim();
+  const date = document.getElementById("date").value;
+  const location = document.getElementById("location").value.trim();
+  const mobile = document.getElementById("mobile").value.trim();
+
+  if (!productName || !description || !date || !location || !mobile) {
+    showToast("All fields are required", "error");
+    return;
+  }
+
+  if (!/^\d{10}$/.test(mobile)) {
+    showToast("Mobile number must be 10 digits", "error");
+    return;
+  }
+
+  showToast("Submitting...", "success");
+
+  const formData = new FormData();
+  formData.append("type", "found");
+  formData.append("productName", productName);
+  formData.append("description", description);
+  formData.append("date", date);
+  formData.append("location", location);
+  formData.append("mobile", mobile);
+  formData.append("userId", userId);
+  if (image) formData.append("image", image);
+
+  try {
+    const res = await fetch("http://localhost:3000/api/items", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(data.message || "Upload failed", "error");
+      return;
+    }
+
+    showToast("Found item added successfully", "success");
+    document.querySelectorAll("input, textarea").forEach(el => el.value = "");
+
+  } catch {
+    showToast("Server error. Try again later", "error");
+  }
+}
+</script>
+
+</body>
+</html>

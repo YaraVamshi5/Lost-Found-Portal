@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lost & Found Portal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <a href="index.html"> <img src="assets/logo.png" alt="Lost & Found Logo" />  </a>
+  </div>
+
+  <!-- Desktop-Nav -->
+  <nav class="desktop-nav">
+    <a href="index.html">Home</a>
+    <a href="lost-item.html">Losted Item</a>
+    <a href="found-item.html">Founded Item</a>
+    <a href="lost-list.html">Losted List</a>
+    <a href="found-list.html">Founded List</a>
+    <button class="user-btn" onclick="openUserModal()">👤</button>
+  </nav>
+
+  <!-- Mobile-User-Icon -->
+  <div class="mobile-user" onclick="openUserModal()">👤</div>
+</header>
+
+<main class="hero">
+  <div class="hero-content">
+    <img src="assets/background-image.png" alt="Hero Image" />
+  </div>
+</main>
+
+<!-- Mobile-Bottom-Nav -->
+<nav class="bottom-nav">
+  <a href="lost-item.html">Lost</a>
+  <a href="found-item.html">Found</a>
+  <a href="lost-list.html">Losted</a>
+  <a href="found-list.html">Founded</a>
+</nav>
+
+<!-- User Model -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <span class="close-btn" onclick="closeUserModal()">×</span>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+
+<script src="script.js"></script>
+</body>
+</html>
