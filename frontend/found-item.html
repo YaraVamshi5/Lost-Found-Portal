@@ -80,22 +80,19 @@
 
     .toast.success { background: #16a34a; }
     .toast.error { background: #dc2626; }
-    .found-item-text{
-      align-items: center;
-    }
   </style>
 </head>
 
 <body>
 
 <div class="container">
-  <h2 class="found-item-text">Found Item</h2>
+  <h2>Found Item</h2>
 
   <label>Image</label>
   <input type="file" id="image" accept="image/*"/>
 
   <label>Product Name</label>
-  <input type="text" placeholder="Enter Product Name" id="productName"/>
+  <input type="text" id="productName" placeholder="Enter Product Name"/>
 
   <label>Description</label>
   <textarea id="description" placeholder="About Product"></textarea>
@@ -104,10 +101,10 @@
   <input type="date" id="date"/>
 
   <label>Founded Location</label>
-  <input type="text" placeholder="Enter Founded location" id="location"/>
+  <input type="text" id="location" placeholder="Enter Founded location"/>
 
   <label>Mobile Number</label>
-  <input type="text" placeholder="Enter mobile number" id="mobile"/>
+  <input type="text" id="mobile" placeholder="Enter mobile number"/>
 
   <button type="button" id="submitBtn">Confirm</button>
 </div>
@@ -115,6 +112,10 @@
 <div id="toast" class="toast"></div>
 
 <script>
+/* ================= CONFIG ================= */
+const API_BASE_URL = "https://lost-found-portal-mx9e.onrender.com";
+
+/* ================= TOAST ================= */
 let toastTimer;
 
 function showToast(msg, type = "success", duration = 4000) {
@@ -126,7 +127,7 @@ function showToast(msg, type = "success", duration = 4000) {
   toastTimer = setTimeout(() => toast.style.display = "none", duration);
 }
 
-/* ---------- login Check ---------- */
+/* ================= LOGIN CHECK ================= */
 const userId = localStorage.getItem("userId");
 const submitBtn = document.getElementById("submitBtn");
 
@@ -136,18 +137,18 @@ if (!userId) {
   setTimeout(() => location.href = "index.html", 4000);
 }
 
-/* ---------- Submit ---------- */
+/* ================= SUBMIT ================= */
 submitBtn.addEventListener("click", submitItem);
 
 async function submitItem() {
   if (!userId) return;
 
   const image = document.getElementById("image").files[0];
-  const productName = document.getElementById("productName").value.trim();
-  const description = document.getElementById("description").value.trim();
-  const date = document.getElementById("date").value;
-  const location = document.getElementById("location").value.trim();
-  const mobile = document.getElementById("mobile").value.trim();
+  const productName = productNameVal();
+  const description = descriptionVal();
+  const date = dateVal();
+  const location = locationVal();
+  const mobile = mobileVal();
 
   if (!productName || !description || !date || !location || !mobile) {
     showToast("All fields are required", "error");
@@ -172,7 +173,7 @@ async function submitItem() {
   if (image) formData.append("image", image);
 
   try {
-    const res = await fetch("http://localhost:3000/api/items", {
+    const res = await fetch(`${API_BASE_URL}/api/items`, {
       method: "POST",
       body: formData
     });
@@ -188,9 +189,16 @@ async function submitItem() {
     document.querySelectorAll("input, textarea").forEach(el => el.value = "");
 
   } catch {
-    showToast("Server error. Try again later", "error");
+    showToast("Server not reachable. Try again later", "error");
   }
 }
+
+/* ================= HELPERS ================= */
+const productNameVal = () => document.getElementById("productName").value.trim();
+const descriptionVal = () => document.getElementById("description").value.trim();
+const dateVal = () => document.getElementById("date").value;
+const locationVal = () => document.getElementById("location").value.trim();
+const mobileVal = () => document.getElementById("mobile").value.trim();
 </script>
 
 </body>

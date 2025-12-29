@@ -1,3 +1,7 @@
+/* ---------- CONFIG ---------- */
+const API_BASE_URL = "https://lost-found-portal-mx9e.onrender.com";
+
+/* ---------- modal refs ---------- */
 const modal = document.getElementById("userModal");
 const body = document.querySelector(".modal-body");
 
@@ -17,7 +21,7 @@ function closeUserModal() {
   modal.style.display = "none";
 }
 
-/* ---------- Entery ---------- */
+/* ---------- Entry ---------- */
 function showEntry() {
   body.innerHTML = `
     <div class="user-icon">👤</div>
@@ -26,7 +30,7 @@ function showEntry() {
   `;
 }
 
-/* ---------- SignUp ---------- */
+/* ---------- Signup ---------- */
 function showSignup() {
   body.innerHTML = `
     <h2>Create Account</h2>
@@ -58,23 +62,27 @@ async function signup() {
   if (password !== confirm)
     return showToast("Passwords not matched", "error");
 
-  const res = await fetch("http://localhost:3000/api/signup", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, mobile, password })
-  });
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, mobile, password })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (res.ok) {
-    showToast("Account created successfully", "success");
-    showLogin();
-  } else {
-    showToast(` ${data.message}`, "error");
+    if (res.ok) {
+      showToast("Account created successfully", "success");
+      showLogin();
+    } else {
+      showToast(data.message || "Signup failed", "error");
+    }
+  } catch {
+    showToast("Server not reachable", "error");
   }
 }
 
-/* ---------- logIn ---------- */
+/* ---------- Login ---------- */
 function showLogin() {
   body.innerHTML = `
     <h2>Login</h2>
@@ -82,7 +90,6 @@ function showLogin() {
     <input id="password" type="password" placeholder="Password" />
     <button class="primary-btn" onclick="login()">Login</button>
   `;
-  
 }
 
 async function login() {
@@ -92,37 +99,42 @@ async function login() {
   if (!email || !password)
     return showToast("Email and password required", "error");
 
-  const res = await fetch("http://localhost:3000/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
-  });
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!res.ok)
-    return showToast(` ${data.message}`, "error");
+    if (!res.ok)
+      return showToast(data.message || "Login failed", "error");
 
-  localStorage.setItem("userId", data.user.id);
-  closeUserModal();
-  showToast(" Login successful", "success");
+    localStorage.setItem("userId", data.user.id);
+    closeUserModal();
+    showToast("Login successful", "success");
+  } catch {
+    showToast("Server not reachable", "error");
+  }
 }
 
-/* ---------- load user profile ---------- */
+/* ---------- Load profile ---------- */
 async function loadUserProfile(userId) {
   try {
-    const res = await fetch(`http://localhost:3000/api/user/${userId}`);
+    const res = await fetch(`${API_BASE_URL}/api/user/${userId}`);
     const user = await res.json();
 
     if (!res.ok) throw new Error();
     showProfile(user);
   } catch {
+    localStorage.removeItem("userId");
     showEntry();
-    showToast(" Failed to load profile", "error");
+    showToast("Failed to load profile", "error");
   }
 }
 
-/* ---------- profile ---------- */
+/* ---------- Profile ---------- */
 function showProfile(user) {
   body.innerHTML = `
     <div class="user-icon">👤</div>
@@ -141,14 +153,14 @@ function showProfile(user) {
   `;
 }
 
-/* ---------- logout ---------- */
+/* ---------- Logout ---------- */
 function logout() {
   localStorage.removeItem("userId");
   showEntry();
   showToast("Logged out successfully", "success");
 }
 
-/* ---------- toast ---------- */
+/* ---------- Toast ---------- */
 function showToast(msg, type = "success") {
   const toast = document.getElementById("toast");
   toast.textContent = msg;
@@ -160,7 +172,7 @@ function showToast(msg, type = "success") {
   }, 4000);
 }
 
-/* ---------- helper ---------- */
+/* ---------- Helper ---------- */
 function val(id) {
   return document.getElementById(id)?.value.trim();
 }

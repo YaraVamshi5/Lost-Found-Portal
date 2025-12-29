@@ -68,9 +68,8 @@
 
     .toast.success { background: #16a34a; }
     .toast.error { background: #dc2626; }
-    .lost-item-text{
-      text-align: center;
-    }
+
+    .lost-item-text { text-align: center; }
   </style>
 </head>
 
@@ -86,16 +85,16 @@
   <input type="text" placeholder="Enter Product Name" id="productName"/>
 
   <label>Description</label>
-  <textarea id="description" placeholder="About Product" ></textarea>
+  <textarea id="description" placeholder="About Product"></textarea>
 
   <label>Losted Date</label>
   <input type="date" id="date"/>
 
   <label>Losted Location</label>
-  <input type="text" id="location"/  placeholder="Enter location" >
+  <input type="text" id="location" placeholder="Enter location" />
 
   <label>Mobile Number</label>
-  <input type="text" id="mobile"  placeholder="Enter mobile number" />
+  <input type="text" id="mobile" placeholder="Enter mobile number" />
 
   <button type="button" id="submitBtn">Confirm</button>
 </div>
@@ -103,6 +102,10 @@
 <div id="toast" class="toast"></div>
 
 <script>
+/* ================= CONFIG ================= */
+const API_BASE_URL = "https://lost-found-portal-mx9e.onrender.com";
+
+/* ================= TOAST ================= */
 let toastTimer;
 
 function showToast(msg, type = "success", duration = 4000) {
@@ -114,6 +117,7 @@ function showToast(msg, type = "success", duration = 4000) {
   toastTimer = setTimeout(() => toast.style.display = "none", duration);
 }
 
+/* ================= LOGIN CHECK ================= */
 const userId = localStorage.getItem("userId");
 const submitBtn = document.getElementById("submitBtn");
 
@@ -123,6 +127,7 @@ if (!userId) {
   setTimeout(() => location.href = "index.html", 4000);
 }
 
+/* ================= SUBMIT ================= */
 submitBtn.addEventListener("click", submitItem);
 
 async function submitItem() {
@@ -158,7 +163,7 @@ async function submitItem() {
   if (image) formData.append("image", image);
 
   try {
-    const res = await fetch("http://localhost:3000/api/items", {
+    const res = await fetch(`${API_BASE_URL}/api/items`, {
       method: "POST",
       body: formData
     });
@@ -174,7 +179,7 @@ async function submitItem() {
     document.querySelectorAll("input, textarea").forEach(el => el.value = "");
 
   } catch {
-    showToast("Server error", "error");
+    showToast("Server not reachable", "error");
   }
 }
 </script>

@@ -5,38 +5,45 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 
-
- //-------------  MiddleWare -------------- 
-app.use(cors());
+/* ---------- Middleware ---------- */
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ---------- Data Connection ------------ 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.error(err));
+/* ---------- Ensure uploads folder exists ---------- */
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
 
-//----------- Multer Config---------- 
+/* ---------- MongoDB Connection ---------- */
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.error("Mongo error:", err));
+
+/* ---------- Multer Config ---------- */
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
+  destination: (req, file, cb) => cb(null, "uploads"),
   filename: (req, file, cb) =>
     cb(null, Date.now() + path.extname(file.originalname)),
 });
 
 const upload = multer({ storage });
 
-// ---------- User Schema ------------ 
+/* ---------- User Schema ---------- */
 const userSchema = new mongoose.Schema(
   {
     name: String,
     email: { type: String, unique: true },
     mobile: String,
     password: String,
-
     lostCount: { type: Number, default: 0 },
     foundCount: { type: Number, default: 0 },
     returnedCount: { type: Number, default: 0 },
@@ -44,10 +51,9 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
 const User = mongoose.model("User", userSchema);
 
-//--------- item Schema ----------- 
+/* ---------- Item Schema ---------- */
 const itemSchema = new mongoose.Schema(
   {
     type: { type: String, enum: ["lost", "found"], required: true },
@@ -65,9 +71,9 @@ const itemSchema = new mongoose.Schema(
 
 const Item = mongoose.model("Item", itemSchema);
 
-// -------- Auth Routh -------- 
+/* ---------- AUTH ROUTES ---------- */
 
-// ---------SignUp------- 
+/* ---------- Signup ---------- */
 app.post("/api/signup", async (req, res) => {
   try {
     const { name, email, mobile, password } = req.body;
@@ -97,6 +103,7 @@ app.post("/api/signup", async (req, res) => {
         mobile: user.mobile,
         lostCount: user.lostCount,
         foundCount: user.foundCount,
+        returnedCount: user.returnedCount,
       },
     });
   } catch {
@@ -104,7 +111,7 @@ app.post("/api/signup", async (req, res) => {
   }
 });
 
-// ------- LogIn ------ 
+/* ---------- Login ---------- */
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -126,6 +133,7 @@ app.post("/api/login", async (req, res) => {
         mobile: user.mobile,
         lostCount: user.lostCount,
         foundCount: user.foundCount,
+        returnedCount: user.returnedCount,
       },
     });
   } catch {
@@ -133,7 +141,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-//----------- Get user by ID for profile counting update-------- 
+/* ---------- Get User Profile ---------- */
 app.get("/api/user/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
@@ -144,18 +152,16 @@ app.get("/api/user/:id", async (req, res) => {
   }
 });
 
-//-------- Item Routes --------- 
+/* ---------- ITEM ROUTES ---------- */
 
-// --------Add Lost / Found Items (Login Required)---------- 
+/* ---------- Add Lost / Found Item ---------- */
 app.post("/api/items", upload.single("image"), async (req, res) => {
   try {
     const { type, productName, description, date, location, mobile, userId } =
       req.body;
 
     if (!userId)
-      return res
-        .status(401)
-        .json({ message: "Login required to upload item" });
+      return res.status(401).json({ message: "Login required" });
 
     if (!type || !productName || !date || !location || !mobile)
       return res.status(400).json({ message: "Missing fields" });
@@ -180,63 +186,51 @@ app.post("/api/items", upload.single("image"), async (req, res) => {
     }
 
     res.json({ message: "Item added successfully", item });
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to add item" });
   }
 });
 
-// -------- Get Lost or Found Items---------- 
+/* ---------- Get Lost / Found Items ---------- */
 app.get("/api/items", async (req, res) => {
   const { type } = req.query;
   const items = await Item.find({ type }).sort({ createdAt: -1 });
   res.json(items);
 });
 
-// ----------Marking items as Returned only Owner-------------- 
+/* ---------- Mark Item as Returned ---------- */
 app.put("/api/items/:id/returned", async (req, res) => {
   try {
     const { userId } = req.body;
 
-    if (!userId) {
+    if (!userId)
       return res.status(401).json({ message: "Login required" });
-    }
 
     const item = await Item.findById(req.params.id);
-
-    if (!item) {
+    if (!item)
       return res.status(404).json({ message: "Item not found" });
-    }
 
-    // ---------Owner checking---------
-    if (item.userId.toString() !== userId) {
+    if (item.userId.toString() !== userId)
       return res.status(403).json({ message: "Not authorized" });
-    }
 
-    // ---------prevent Double Checking---------
-    if (item.returned) {
+    if (item.returned)
       return res.status(400).json({ message: "Already returned" });
-    }
 
     item.returned = true;
     await item.save();
 
-    // --------Updating user Returned Count------------
     await User.findByIdAndUpdate(userId, {
-      $inc: { returnedCount: 1 }
+      $inc: { returnedCount: 1 },
     });
 
     res.json({ message: "Item marked as returned" });
-
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to mark returned" });
   }
 });
 
-
-
-
-// ---------- Server -------- 
+/* ---------- Server ---------- */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`Server running on port ${PORT}`)
-);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
