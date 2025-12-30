@@ -19,7 +19,7 @@ if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
 }
 
-/* ---------- MongoDB Connection (FIXED) ---------- */
+/* ---------- MongoDB Connection ---------- */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
@@ -70,7 +70,7 @@ const Item = mongoose.model("Item", itemSchema);
 
 /* ---------- AUTH ROUTES ---------- */
 
-/* ---------- Signup ---------- */
+// Signup
 app.post("/api/signup", async (req, res) => {
   try {
     const { name, email, mobile, password } = req.body;
@@ -108,7 +108,7 @@ app.post("/api/signup", async (req, res) => {
   }
 });
 
-/* ---------- Login ---------- */
+// Login
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -138,7 +138,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-/* ---------- Get User Profile ---------- */
+// Get user profile
 app.get("/api/user/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
@@ -151,7 +151,7 @@ app.get("/api/user/:id", async (req, res) => {
 
 /* ---------- ITEM ROUTES ---------- */
 
-/* ---------- Add Lost / Found Item ---------- */
+// Add item
 app.post("/api/items", upload.single("image"), async (req, res) => {
   try {
     const { type, productName, description, date, location, mobile, userId } =
@@ -188,14 +188,14 @@ app.post("/api/items", upload.single("image"), async (req, res) => {
   }
 });
 
-/* ---------- Get Lost / Found Items ---------- */
+// Get items
 app.get("/api/items", async (req, res) => {
   const { type } = req.query;
   const items = await Item.find({ type }).sort({ createdAt: -1 });
   res.json(items);
 });
 
-/* ---------- Mark Item as Returned ---------- */
+// Mark returned
 app.put("/api/items/:id/returned", async (req, res) => {
   try {
     const { userId } = req.body;
@@ -227,7 +227,7 @@ app.put("/api/items/:id/returned", async (req, res) => {
 });
 
 /* ---------- Server ---------- */
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

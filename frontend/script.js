@@ -34,13 +34,21 @@ function showEntry() {
 function showSignup() {
   body.innerHTML = `
     <h2>Create Account</h2>
-    <input id="name" placeholder="Full Name" />
-    <input id="email" placeholder="Email" />
-    <input id="mobile" placeholder="Mobile Number" />
-    <input id="password" type="password" placeholder="Password" />
-    <input id="confirm" type="password" placeholder="Confirm Password" />
+
+    <!-- autofill blocker -->
+    <input type="text" style="display:none">
+    <input type="password" style="display:none">
+
+    <input id="name" placeholder="Full Name" autocomplete="off" />
+    <input id="email" placeholder="Email" autocomplete="off" />
+    <input id="mobile" placeholder="Mobile Number" autocomplete="off" />
+    <input id="password" type="password" placeholder="Password" autocomplete="new-password" />
+    <input id="confirm" type="password" placeholder="Confirm Password" autocomplete="new-password" />
+
     <button class="primary-btn" onclick="signup()">Create Account</button>
   `;
+
+  clearAuthInputs();
 }
 
 async function signup() {
@@ -71,12 +79,11 @@ async function signup() {
 
     const data = await res.json();
 
-    if (res.ok) {
-      showToast("Account created successfully", "success");
-      showLogin();
-    } else {
-      showToast(data.message || "Signup failed", "error");
-    }
+    if (!res.ok)
+      return showToast(data.message || "Signup failed", "error");
+
+    showToast("Account created successfully", "success");
+    showLogin();
   } catch {
     showToast("Server not reachable", "error");
   }
@@ -86,10 +93,18 @@ async function signup() {
 function showLogin() {
   body.innerHTML = `
     <h2>Login</h2>
-    <input id="email" placeholder="Email" />
-    <input id="password" type="password" placeholder="Password" />
+
+    <!-- autofill blocker -->
+    <input type="text" style="display:none">
+    <input type="password" style="display:none">
+
+    <input id="email" placeholder="Email" autocomplete="off" />
+    <input id="password" type="password" placeholder="Password" autocomplete="off" />
+
     <button class="primary-btn" onclick="login()">Login</button>
   `;
+
+  clearAuthInputs();
 }
 
 async function login() {
@@ -172,7 +187,14 @@ function showToast(msg, type = "success") {
   }, 4000);
 }
 
-/* ---------- Helper ---------- */
+/* ---------- Helpers ---------- */
 function val(id) {
   return document.getElementById(id)?.value.trim();
+}
+
+function clearAuthInputs() {
+  setTimeout(() => {
+    const inputs = body.querySelectorAll("input");
+    inputs.forEach(input => input.value = "");
+  }, 0);
 }
